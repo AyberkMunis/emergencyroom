@@ -260,6 +260,14 @@ public class EmergencyApp {
      */
     public int verifyPatient(String fiscalCode) throws EmergencyException{
         //TODO: to be implemented
+        if(!patients.containsKey(fiscalCode)){
+            throw new EmergencyException();
+        }
+        if(patients.get(fiscalCode).getStatus()==PatientStatus.DISCHARGED){
+            return 0;
+        }else if(patients.get(fiscalCode).getStatus()==PatientStatus.HOSPITALIZED){
+            return 1;
+        }
         return -1;
     }
 
@@ -270,7 +278,7 @@ public class EmergencyApp {
      */    
     public int getNumberOfPatients() {
         //TODO: to be implemented
-        return -1;
+        return (int) patients.values().stream().filter(c->c.getStatus()==PatientStatus.ADMITTED).count();
     }
 
     /**
@@ -281,12 +289,15 @@ public class EmergencyApp {
      */
     public int getNumberOfPatientsByDate(String date) {
         //TODO: to be implemented
-        return -1;
+        return (int) patients.values().stream().filter(c->c.getDateTimeAccepted().equals(date)).count();
     }
 
     public int getNumberOfPatientsHospitalizedByDepartment(String departmentName) throws EmergencyException {
         //TODO: to be implemented
-        return -1;
+        if(!deps.values().stream().filter(d->d.equals(departmentName)).findAny().isPresent()){
+            throw new EmergencyException();
+        }
+        return (int) deps.values().stream().filter(d->d.equals(departmentName)).count();
     }
 
     /**
@@ -296,7 +307,7 @@ public class EmergencyApp {
      */
     public int getNumberOfPatientsDischarged() {
         //TODO: to be implemented
-        return -1;
+        return (int) patients.values().stream().filter(c->c.getStatus()==PatientStatus.DISCHARGED).count();
     }
 
     /**

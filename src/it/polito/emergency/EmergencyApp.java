@@ -1,8 +1,13 @@
 package it.polito.emergency;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class EmergencyApp {
 
@@ -22,8 +27,15 @@ public class EmergencyApp {
      * @param period
      * @param workingHours
      */
+    private HashMap<String,Professional> profs=new HashMap<String,Professional>();
+    public HashMap<String,Department> deps=new HashMap<String,Department>();
+    private HashMap<String,Patient> patients=new HashMap<String,Patient>();
+    private HashMap<String,Report> reports=new HashMap<String,Report>();
+    char[] chars={};
+    private Integer rid=1;
     public void addProfessional(String id, String name, String surname, String specialization, String period) {
         //TODO: to be implemented
+        profs.put(id,new Professional(id, name, surname, specialization, period));
     }
 
     /**
@@ -34,8 +46,10 @@ public class EmergencyApp {
      * @throws EmergencyException If no professional is found.
      */    
     public Professional getProfessionalById(String id) throws EmergencyException {
-        //TODO: to be implemented
-        return null;
+        if(!profs.containsKey(id)){
+            throw new EmergencyException("Id not found");
+        }
+        return profs.get(id);
     }
 
     /**
@@ -47,7 +61,10 @@ public class EmergencyApp {
      */    
     public List<String> getProfessionals(String specialization) throws EmergencyException {
         //TODO: to be implemented
-        return null;
+        if(profs.values().stream().filter(c->c.getSpecialization().equals(specialization)).map(Professional::getId).collect(Collectors.toList()).size()==0){
+            throw new EmergencyException("No doctor Found");
+        }
+        return profs.values().stream().filter(c->c.getSpecialization().equals(specialization)).map(Professional::getId).collect(Collectors.toList());
     }
 
     /**
@@ -60,7 +77,13 @@ public class EmergencyApp {
      */    
     public List<String> getProfessionalsInService(String specialization, String period) throws EmergencyException {
         //TODO: to be implemented
-        return null;
+
+        if(profs.values().stream().filter(c->c.checking(period)&&c.getSpecialization().equals(specialization)).map(Professional::getId).collect(Collectors.toList()).size()==0){
+            throw new EmergencyException("No doctor Found");
+        }
+
+      
+        return profs.values().stream().filter(c->c.checking(period)&&c.getSpecialization().equals(specialization)).map(Professional::getId).collect(Collectors.toList());
     }
 
     /**
@@ -70,7 +93,12 @@ public class EmergencyApp {
      * @param maxPatients The maximum number of patients that the department can handle.
      * @throws EmergencyException If the department already exists.
      */
-    public void addDepartment(String name, int maxPatients) {
+    public void addDepartment(String name, int maxPatients) throws EmergencyException{
+        if(deps.containsKey(name)){
+            throw new EmergencyException("This department is exist");
+        }
+        deps.put(name,new Department(name, maxPatients));
+
         //TODO: to be implemented
     }
 
@@ -82,7 +110,10 @@ public class EmergencyApp {
      */
     public List<String> getDepartments() throws EmergencyException {
         //TODO: to be implemented
-        return null;
+        if(deps.size()==0){
+            throw new EmergencyException("No department is found");
+        }
+        return deps.values().stream().map(Department::getName).collect(Collectors.toList());
     }
 
     /**
@@ -95,7 +126,23 @@ public class EmergencyApp {
      * @throws IOException If there is an error reading from the file or if the reader is null.
      */
     public int readFromFileProfessionals(Reader reader) throws IOException {
-        //TODO: to be implemented
+        if(reader==null){
+            throw new IOException();
+        }
+        reader.read(chars,1,200);
+
+
+        
+        
+
+        String s=String.valueOf(chars);
+        String[] s2=s.split("\n");
+        String[] s3=s2[1].split(",");
+
+        profs.put(s3[0],new Professional(s3[0], s3[1], s3[2], s3[4], s3[5]));
+
+	
+
         return -1;
     }
 
@@ -124,8 +171,8 @@ public class EmergencyApp {
      * @param dateTimeAccepted The date and time the patient was accepted into the emergency system.
      */
     public Patient addPatient(String fiscalCode, String name, String surname, String dateOfBirth, String reason, String dateTimeAccepted) {
-        //TODO: to be implemented
-        return null;
+        patients.put(fiscalCode,new Patient(fiscalCode, name, surname, dateOfBirth,reason,dateTimeAccepted,PatientStatus.ADMITTED));
+        return patients.get(fiscalCode);
     }
 
     /**
@@ -137,7 +184,10 @@ public class EmergencyApp {
      */    
     public List<Patient> getPatient(String identifier) throws EmergencyException {
         //TODO: to be implemented
-        return null;
+        if(!identifier.contains("0123456789")){
+            return patients.values().stream().filter(p->p.getSurname().equals(identifier)).collect(Collectors.toList());
+        }
+        return patients.values().stream().filter(p->p.getFiscalCode().equals(identifier)).collect(Collectors.toList());
     }
 
     /**
@@ -150,7 +200,7 @@ public class EmergencyApp {
      */
     public List<String> getPatientsByDate(String date) {
         //TODO: to be implemented
-        return null;
+        return patients.values().stream().filter(p->p.getDateTimeAccepted().equals(date)).map(Patient::getFiscalCode).collect(Collectors.toList());
     }
 
     /**
@@ -162,13 +212,21 @@ public class EmergencyApp {
      * @throws EmergencyException If the patient does not exist, if no professionals with the required specialization are found, or if none are available during the period of the request.
      */
     public String assignPatientToProfessional(String fiscalCode, String specialization) throws EmergencyException {
-        //TODO: to be implemented
-        return null;
+        if(!patients.containsKey(fiscalCode)||!profs.values().stream().filter(c->c.checking2(patients.get(fiscalCode).getDateTimeAccepted())).findAny().isPresent()||profs.values().stream().filter(c->c.getSpecialization().equals(specialization)).collect(Collectors.toList()).size()==0){
+         throw new EmergencyException();
+    }
+    Professional p1=profs.values().stream().filter(c->c.checking2(patients.get(fiscalCode).getDateTimeAccepted())&&c.getSpecialization().equals(specialization)).findFirst().get();
+    p1.getPatients2().add(patients.get(fiscalCode));
+    patients.get(fiscalCode).setProf(p1);
+        return p1.getId();
     }
 
     public Report saveReport(String professionalId, String fiscalCode, String date, String description) throws EmergencyException {
-        //TODO: to be implemented
-        return null;
+        Report r=new Report(professionalId, fiscalCode, date, description, String.valueOf(rid));
+        reports.put(String.valueOf(rid), r);
+        rid+=1;
+        
+        return r;
     }
 
     /**
@@ -179,7 +237,18 @@ public class EmergencyApp {
      * @throws EmergencyException If the patient does not exist or if the department does not exist.
      */
     public void dischargeOrHospitalize(String fiscalCode, String departmentName) throws EmergencyException {
-        //TODO: to be implemented
+
+        
+        
+        if(deps.get(departmentName).getPatients()==deps.get(departmentName).getMaxPatients()){
+            patients.get(fiscalCode).setStatus(PatientStatus.DISCHARGED);
+        }
+        else{
+            patients.get(fiscalCode).setStatus(PatientStatus.HOSPITALIZED);
+            deps.get(departmentName).setPatients();
+
+           
+        }
     }
 
     /**

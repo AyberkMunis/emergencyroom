@@ -4,9 +4,13 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class EmergencyApp {
@@ -29,10 +33,27 @@ public class EmergencyApp {
      */
     private HashMap<String,Professional> profs=new HashMap<String,Professional>();
     public HashMap<String,Department> deps=new HashMap<String,Department>();
-    private HashMap<String,Patient> patients=new HashMap<String,Patient>();
+    private SortedMap<String,Patient> patients=new TreeMap<String,Patient>();
     private HashMap<String,Report> reports=new HashMap<String,Report>();
+    private HashMap<Patient,Professional> p2prof=new HashMap<Patient,Professional>();
     char[] chars={};
     private Integer rid=1;
+    public boolean fiscal(String s){
+        int a=0;
+        for(int i=0;i<s.length();i++){
+            if(Character.isDigit(s.charAt(i))){
+                a+=1;
+            }
+            
+
+        }
+        if(a==0){
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
     public void addProfessional(String id, String name, String surname, String specialization, String period) {
         //TODO: to be implemented
         profs.put(id,new Professional(id, name, surname, specialization, period));
@@ -78,7 +99,7 @@ public class EmergencyApp {
     public List<String> getProfessionalsInService(String specialization, String period) throws EmergencyException {
         //TODO: to be implemented
 
-        if(profs.values().stream().filter(c->c.checking(period)&&c.getSpecialization().equals(specialization)).map(Professional::getId).collect(Collectors.toList()).size()==0){
+        if(profs.values().stream().filter(c->c.checking(period)&&c.getSpecialization().equals(specialization)).collect(Collectors.toList()).size()==0){
             throw new EmergencyException("No doctor Found");
         }
 
@@ -93,11 +114,12 @@ public class EmergencyApp {
      * @param maxPatients The maximum number of patients that the department can handle.
      * @throws EmergencyException If the department already exists.
      */
-    public void addDepartment(String name, int maxPatients) throws EmergencyException{
-        if(deps.containsKey(name)){
-            throw new EmergencyException("This department is exist");
+    public void addDepartment(String name, int maxPatients){
+        if(!deps.keySet().stream().filter(c->c.equals(name)).findAny().isPresent()){
+            deps.put(name,new Department(name, maxPatients));
         }
-        deps.put(name,new Department(name, maxPatients));
+        
+       
 
         //TODO: to be implemented
     }
@@ -129,21 +151,24 @@ public class EmergencyApp {
         if(reader==null){
             throw new IOException();
         }
-        reader.read(chars,1,200);
+        int intValueOfChar;
+        String targetString = "";
+        while ((intValueOfChar = reader.read()) != -1) {
+            targetString += (char) intValueOfChar;
+        }
+        reader.close();
+        String[] spString=targetString.split("\n");
+        for(int i=1;i<spString.length;i++){
+            String[] prof=spString[i].split(",");
+        addProfessional(prof[0],prof[1], prof[2], prof[3],prof[4]);
 
-
+        }
         
-        
 
-        String s=String.valueOf(chars);
-        String[] s2=s.split("\n");
-        String[] s3=s2[1].split(",");
-
-        profs.put(s3[0],new Professional(s3[0], s3[1], s3[2], s3[4], s3[5]));
 
 	
 
-        return -1;
+        return spString.length-1;
     }
 
     /**
@@ -157,7 +182,27 @@ public class EmergencyApp {
      */    
     public int readFromFileDepartments(Reader reader) throws IOException {
         //TODO: to be implemented
-        return -1;
+        if(reader==null){
+            throw new IOException();
+        }
+        int intValueOfChar;
+        String targetString = "";
+        while ((intValueOfChar = reader.read()) != -1) {
+            targetString += (char) intValueOfChar;
+        }
+        reader.close();
+        String[] spString=targetString.split("\n");
+        for(int i=1;i<spString.length;i++){
+            String[] d=spString[i].split(",");
+        addDepartment(d[0], Integer.parseInt(d[1]) );
+
+        }
+        
+
+
+	
+
+        return spString.length-1;
     }
 
     /**
@@ -184,10 +229,11 @@ public class EmergencyApp {
      */    
     public List<Patient> getPatient(String identifier) throws EmergencyException {
         //TODO: to be implemented
-        if(!identifier.contains("0123456789")){
+        if(!fiscal(identifier)){
             return patients.values().stream().filter(p->p.getSurname().equals(identifier)).collect(Collectors.toList());
         }
-        return patients.values().stream().filter(p->p.getFiscalCode().equals(identifier)).collect(Collectors.toList());
+
+        return patients.values().stream().filter(c->c.getFiscalCode().equals(identifier)).collect(Collectors.toList());
     }
 
     /**
@@ -218,10 +264,14 @@ public class EmergencyApp {
     Professional p1=profs.values().stream().filter(c->c.checking2(patients.get(fiscalCode).getDateTimeAccepted())&&c.getSpecialization().equals(specialization)).findFirst().get();
     p1.getPatients2().add(patients.get(fiscalCode));
     patients.get(fiscalCode).setProf(p1);
+    p2prof.put(patients.get(fiscalCode), p1);
         return p1.getId();
     }
 
     public Report saveReport(String professionalId, String fiscalCode, String date, String description) throws EmergencyException {
+        if(!profs.containsKey(professionalId)){
+            throw new EmergencyException();
+        }
         Report r=new Report(professionalId, fiscalCode, date, description, String.valueOf(rid));
         reports.put(String.valueOf(rid), r);
         rid+=1;
@@ -238,7 +288,9 @@ public class EmergencyApp {
      */
     public void dischargeOrHospitalize(String fiscalCode, String departmentName) throws EmergencyException {
 
-        
+        if(!patients.containsKey(fiscalCode)||!deps.containsKey(departmentName)){
+            throw new EmergencyException();
+        }
         
         if(deps.get(departmentName).getPatients()==deps.get(departmentName).getMaxPatients()){
             patients.get(fiscalCode).setStatus(PatientStatus.DISCHARGED);
@@ -294,10 +346,10 @@ public class EmergencyApp {
 
     public int getNumberOfPatientsHospitalizedByDepartment(String departmentName) throws EmergencyException {
         //TODO: to be implemented
-        if(!deps.values().stream().filter(d->d.equals(departmentName)).findAny().isPresent()){
+        if(!deps.containsKey(departmentName)){
             throw new EmergencyException();
         }
-        return (int) deps.values().stream().filter(d->d.equals(departmentName)).count();
+        return (int) deps.get(departmentName).getPatients();
     }
 
     /**
@@ -318,6 +370,6 @@ public class EmergencyApp {
      */
     public int getNumberOfPatientsAssignedToProfessionalDischarged(String specialization) {
         //TODO: to be implemented
-        return -1;
+        return (int)p2prof.keySet().stream().filter(c->c.getStatus()==PatientStatus.DISCHARGED&&c.getProf().getSpecialization().equals(specialization)).count();
     }
 }

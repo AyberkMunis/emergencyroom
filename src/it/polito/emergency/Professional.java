@@ -37,7 +37,7 @@ public class Professional {
         String[] period1=period.split(" to ");
         String[] period2=period1[0].split("-");
         String[] period3=period1[1].split("-");
-        if((Integer.parseInt(period2[0])>=Integer.parseInt(a2[0]))&&(Integer.parseInt(period2[1])>=Integer.parseInt(a2[1]))&&(Integer.parseInt(period2[2])>=Integer.parseInt(a2[2]))){
+        if((Integer.parseInt(period2[0])<=Integer.parseInt(a2[0]))&&(Integer.parseInt(period2[1])<=Integer.parseInt(a2[1]))&&(Integer.parseInt(period2[2])<=Integer.parseInt(a2[2]))&&(Integer.parseInt(period3[0])>=Integer.parseInt(a3[0]))&&(Integer.parseInt(period3[1])>=Integer.parseInt(a3[1]))&&(Integer.parseInt(period3[2])>=Integer.parseInt(a3[2]))){
             return true;
         }
         return false;

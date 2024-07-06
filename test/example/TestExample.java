@@ -60,8 +60,8 @@ public class TestExample {
 
 		StringReader reader = new StringReader("id,name,surname,specialization,period\n1,John,Doe,Surgery,2024-01-01 to 2024-12-31");
         int count;
-		//count = app.readFromFileProfessionals(reader);
-		//assertEquals(1, count);
+		count = app.readFromFileProfessionals(reader);
+		assertEquals(1, count);
 	}
 
 	@Test
